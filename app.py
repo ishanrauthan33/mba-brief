@@ -10,6 +10,12 @@ from fastapi.staticfiles import StaticFiles
 from google import genai
 from google.genai import types
 
+try:
+    import yfinance as yf
+    _YF_AVAILABLE = True
+except ImportError:
+    _YF_AVAILABLE = False
+
 load_dotenv()
 
 app = FastAPI(title="The MBA Brief API")
@@ -113,6 +119,82 @@ CRITICAL RULES:
 """
 
 
+def _yf_ticker(ticker: str) -> tuple[float, float] | None:
+    """Return (last_price, prev_close) for a Yahoo Finance ticker, or None."""
+    try:
+        fi = yf.Ticker(ticker).fast_info
+        p, c = float(fi.last_price), float(fi.previous_close)
+        if p and c:
+            return p, c
+    except Exception:
+        pass
+    return None
+
+
+def _fetch_usd_inr() -> tuple[float, float] | None:
+    """Fetch USD/INR from fawazahmed0 Currency API (free, no key, real-time + history)."""
+    try:
+        import urllib.request, json as _json, datetime as _dt
+        # Today's rate
+        url_today = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json"
+        with urllib.request.urlopen(url_today, timeout=6) as r:
+            today_rate = _json.loads(r.read())["usd"]["inr"]
+        # Yesterday's rate (skip weekends by going back 3 days max)
+        for days_back in (1, 2, 3):
+            try:
+                date_str = (_dt.date.today() - _dt.timedelta(days=days_back)).isoformat()
+                url_prev = f"https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@{date_str}/v1/currencies/usd.json"
+                with urllib.request.urlopen(url_prev, timeout=6) as r2:
+                    prev_rate = _json.loads(r2.read())["usd"]["inr"]
+                break
+            except Exception:
+                prev_rate = today_rate  # fallback: show no change
+        return float(today_rate), float(prev_rate)
+    except Exception:
+        return None
+
+
+def _fetch_brent() -> tuple[float, float] | None:
+    """Fetch Brent Crude via yfinance BZ=F — returns (last, prev) in USD."""
+    result = _yf_ticker("BZ=F")
+    if result:
+        return result
+    # Fallback: try CL=F (WTI, close enough as indicator)
+    return _yf_ticker("CL=F")
+
+
+def fetch_live_markets() -> list[dict]:
+    """Fetch real-time SENSEX, NIFTY, USD/INR, Brent Crude from multiple sources."""
+    if not _YF_AVAILABLE:
+        return []
+
+    def make_entry(label: str, vals: tuple[float, float] | None,
+                   prefix: str = "", suffix: str = "") -> dict | None:
+        if not vals:
+            return None
+        today_val, prev_val = vals
+        change = today_val - prev_val
+        pct    = (change / prev_val) * 100
+        sign   = "+" if change >= 0 else ""
+        direction = "up" if change >= 0 else "down"
+        if today_val >= 10_000:
+            value_str = f"{prefix}{today_val:,.2f}{suffix}"
+        else:
+            value_str = f"{prefix}{today_val:.2f}{suffix}"
+        change_str = f"{sign}{change:.2f} ({sign}{pct:.2f}%)"
+        return {"label": label, "value": value_str, "change": change_str, "dir": direction}
+
+    entries = [
+        make_entry("SENSEX",      _yf_ticker("^BSESN")),
+        make_entry("NIFTY 50",    _yf_ticker("^NSEI")),
+        make_entry("USD / INR",   _fetch_usd_inr(), prefix="₹"),
+        make_entry("BRENT CRUDE", _fetch_brent(),   prefix="$"),
+    ]
+    return [e for e in entries if e is not None]
+
+
+
+
 # In-memory cache as fallback when filesystem is ephemeral (e.g. cloud)
 _memory_cache: dict[str, dict] = {}
 
@@ -122,6 +204,14 @@ MODELS = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.5-flash"]
 
 def get_cache_path(date_str: str) -> Path:
     return CACHE_DIR / f"brief_{date_str}.json"
+
+
+def inject_live_markets(data: dict) -> dict:
+    """Replace the markets array with real-time Yahoo Finance prices."""
+    live = fetch_live_markets()
+    if live:  # only override if we got valid data
+        data["markets"] = live
+    return data
 
 
 def generate_brief(today: str) -> dict:
@@ -141,7 +231,8 @@ def generate_brief(today: str) -> dict:
             raw = response.text.strip()
             raw = re.sub(r'^```(?:json)?\s*', '', raw)
             raw = re.sub(r'\s*```$', '', raw)
-            return json.loads(raw)
+            data = json.loads(raw)
+            return inject_live_markets(data)
         except Exception as e:
             last_err = e
             continue
@@ -150,9 +241,9 @@ def generate_brief(today: str) -> dict:
 
 def get_brief(today: str) -> dict:
     """Return cached brief (memory → disk → generate)."""
-    # 1. Check memory cache
+    # 1. Check memory cache — still refresh live markets on every request
     if today in _memory_cache:
-        return _memory_cache[today]
+        return inject_live_markets(_memory_cache[today])
     # 2. Check disk cache
     cache_path = get_cache_path(today)
     if cache_path.exists():

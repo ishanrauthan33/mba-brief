@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+cache/
+*.json
+seed_cache.py

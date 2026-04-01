@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The MBA Brief — Daily Business Intelligence for India's MBA Students</title>
+<meta name="description" content="The MBA Brief: curated, contextualised daily business and economy news for MBA students at India's top B-Schools. Read in under 10 minutes." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Sans+3:wght@300;400;600;700&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:wght@700;900&display=swap" rel="stylesheet" />
+<style>
+/* ─── VARIABLES ─────────────────────────────────────────── */
+:root {
+  --parchment: #F5F0E8;
+  --parchment-dark: #EDE7D9;
+  --ink: #111111;
+  --ink-mid: #333333;
+  --ink-light: #666666;
+  --crimson: #C0392B;
+  --oxford: #002147;
+  --rule: #CCBFA8;
+  --stamp-bg: #111111;
+  --stamp-text: #F5F0E8;
+  --ff-headline: 'Playfair Display', Georgia, serif;
+  --ff-body: 'Source Sans 3', Arial, sans-serif;
+  --ff-masthead: 'Roboto Condensed', 'Arial Narrow', sans-serif;
+  --ff-garamond: 'EB Garamond', Georgia, serif;
+  --max-w: 1280px;
+  --gutter: 24px;
+}
+
+/* ─── RESET & BASE ──────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background-color: var(--parchment);
+  color: var(--ink);
+  font-family: var(--ff-body);
+  font-size: 16px;
+  line-height: 1.6;
+  position: relative;
+  min-height: 100vh;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.6;
+}
+a { color: inherit; text-decoration: none; }
+hr { border: none; border-top: 1px solid var(--rule); margin: 0; }
+.thick-rule { border-top: 3px solid var(--ink); }
+
+/* ─── LOADING SCREEN ────────────────────────────────────── */
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--parchment);
+  z-index: 20000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  transition: opacity 0.6s ease;
+}
+#loading-screen.fade-out { opacity: 0; pointer-events: none; }
+.loading-masthead {
+  font-family: var(--ff-masthead);
+  font-weight: 900;
+  font-size: clamp(2rem, 6vw, 4rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1;
+}
+.loading-rule { width: 200px; border-top: 3px double var(--ink); }
+.loading-tagline {
+  font-family: var(--ff-garamond);
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--ink-light);
+}
+.loading-dots {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--crimson);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+.loading-status {
+  font-family: var(--ff-body);
+  font-size: 0.78rem;
+  color: var(--ink-light);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ─── ERROR SCREEN ──────────────────────────────────────── */
+#error-screen {
+  display: none;
+  position: fixed;
+  inset: 0; 
+  background: var(--parchment);
+  z-index: 20000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  padding: 40px;
+}
+#error-screen.visible { display: flex; }
+.error-title {
+  font-family: var(--ff-headline);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--crimson);
+}
+.error-msg {
+  font-family: var(--ff-body);
+  font-size: 0.9rem;
+  color: var(--ink-light);
+  max-width: 480px;
+}
+.error-retry {
+  font-family: var(--ff-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--parchment);
+  border: none;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.error-retry:hover { background: var(--crimson); }
+
+/* ─── PROGRESS BAR ──────────────────────────────────────── */
+#progress-bar {
+  position: fixed; top: 0; left: 0;
+  height: 3px; width: 0%;
+  background: var(--crimson);
+  z-index: 10001;
+  transition: width 0.4s ease;
+}
+
+/* ─── STICKY HEADER ─────────────────────────────────────── */
+#sticky-header {
+  position: fixed; top: 3px; left: 0; right: 0;
+  background: var(--parchment);
+  border-bottom: 2px solid var(--ink);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px var(--gutter);
+  z-index: 10000;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+#sticky-header.visible { transform: translateY(0); }
+#sticky-logo { font-family: var(--ff-masthead); font-weight: 900; font-size: 1.1rem; letter-spacing: 0.15em; text-transform: uppercase; }
+#sticky-date { font-family: var(--ff-body); font-size: 0.78rem; color: var(--ink-light); }
+
+/* ─── TOP NAV ───────────────────────────────────────────── */
+#top-nav { background: var(--ink); padding: 8px var(--gutter); }
+#top-nav ul { list-style: none; display: flex; gap: 28px; max-width: var(--max-w); margin: 0 auto; flex-wrap: wrap; }
+#top-nav a { color: var(--parchment); font-family: var(--ff-body); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; transition: color 0.2s; }
+#top-nav a:hover { color: #D4A847; }
+
+/* ─── AI BADGE ──────────────────────────────────────────── */
+#ai-badge {
+  background: var(--oxford);
+  color: white;
+  font-family: var(--ff-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+#ai-badge::before {
+  content: '✦';
+  font-size: 0.6rem;
+  color: #D4A847;
+}
+
+/* ─── MASTHEAD ──────────────────────────────────────────── */
+#masthead { max-width: var(--max-w); margin: 0 auto; padding: 28px var(--gutter) 16px; text-align: center; border-bottom: 4px double var(--ink); }
+#masthead-title { font-family: var(--ff-masthead); font-weight: 900; font-size: clamp(2.8rem, 7vw, 5.5rem); letter-spacing: 0.18em; text-transform: uppercase; line-height: 1; color: var(--ink); }
+#masthead-rule { margin: 10px 0; }
+#masthead-tagline { font-family: var(--ff-garamond); font-style: italic; font-size: clamp(0.85rem, 1.4vw, 1.05rem); color: var(--ink-light); letter-spacing: 0.04em; }
+#masthead-meta { display: flex; justify-content: center; gap: 32px; margin-top: 10px; font-family: var(--ff-body); font-size: 0.72rem; color: var(--ink-light); text-transform: uppercase; letter-spacing: 0.1em; flex-wrap: wrap; }
+#masthead-meta span b { color: var(--ink); }
+
+/* ─── READ TIME BAR ─────────────────────────────────────── */
+#read-time-bar { max-width: var(--max-w); margin: 0 auto; padding: 10px var(--gutter); display: flex; align-items: center; gap: 20px; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+.read-time-badge { background: var(--oxford); color: white; font-family: var(--ff-body); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 12px; border-radius: 2px; }
+#progress-text { font-family: var(--ff-body); font-size: 0.74rem; color: var(--ink-light); }
+#stories-count { font-weight: 700; color: var(--crimson); }
+
+/* ─── LAYOUT ────────────────────────────────────────────── */
+#wrapper { max-width: var(--max-w); margin: 0 auto; padding: 0 var(--gutter); }
+
+/* ─── SECTION HEADERS ───────────────────────────────────── */
+.section-header { display: flex; align-items: center; gap: 16px; margin: 36px 0 20px; }
+.section-stamp { font-family: var(--ff-masthead); font-weight: 700; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; background: var(--stamp-bg); color: var(--stamp-text); padding: 4px 10px; flex-shrink: 0; }
+.section-stamp.crimson { background: var(--crimson); }
+.section-stamp.oxford { background: var(--oxford); }
+.section-header hr { flex: 1; }
+
+/* ─── BRIEF CARDS ───────────────────────────────────────── */
+.brief-card { border-top: 3px solid var(--ink); padding: 20px 0 24px; cursor: default; position: relative; transition: background 0.2s; }
+.brief-card:hover { background: rgba(0,0,0,0.015); }
+.brief-card.read { opacity: 0.55; }
+.brief-card.read::after { content: '✓ READ'; position: absolute; top: 20px; right: 0; font-family: var(--ff-body); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.14em; color: var(--crimson); }
+.brief-card.lead { border-top: 5px solid var(--ink); padding-bottom: 32px; }
+.brief-card.lead .card-headline { font-size: clamp(1.6rem, 3.5vw, 2.5rem); line-height: 1.15; }
+.source-badge { display: inline-block; font-family: var(--ff-body); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; border: 1.5px solid var(--ink); padding: 2px 8px; margin-bottom: 10px; }
+.card-headline { font-family: var(--ff-headline); font-weight: 700; font-size: clamp(1.15rem, 2.2vw, 1.55rem); line-height: 1.2; margin-bottom: 12px; color: var(--ink); transition: color 0.2s; }
+.brief-card:hover .card-headline { color: var(--crimson); }
+.card-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.read-time { font-family: var(--ff-body); font-size: 0.65rem; color: var(--ink-light); text-transform: uppercase; letter-spacing: 0.1em; }
+.mark-read-btn { font-family: var(--ff-body); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; background: transparent; border: 1px solid var(--rule); color: var(--ink-light); padding: 2px 10px; cursor: pointer; transition: all 0.2s; }
+.mark-read-btn:hover { border-color: var(--ink); color: var(--ink); }
+.mark-read-btn.marked { border-color: var(--crimson); color: var(--crimson); }
+.card-label { font-family: var(--ff-body); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--crimson); margin: 12px 0 4px; }
+.card-gist { font-family: var(--ff-body); font-size: 0.95rem; line-height: 1.65; color: var(--ink-mid); margin-bottom: 10px; }
+.card-sowhat { font-family: var(--ff-garamond); font-style: italic; font-size: 1.02rem; border-left: 3px solid var(--crimson); padding-left: 14px; margin: 12px 0; color: var(--ink); }
+
+/* ─── CONTEXT PILL ──────────────────────────────────────── */
+.context-toggle { display: inline-flex; align-items: center; gap: 6px; font-family: var(--ff-body); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--oxford); background: transparent; border: 1px solid var(--oxford); padding: 3px 12px; cursor: pointer; margin-top: 10px; transition: all 0.2s; }
+.context-toggle:hover { background: var(--oxford); color: white; }
+.context-toggle .arrow { transition: transform 0.25s; display: inline-block; }
+.context-toggle.open .arrow { transform: rotate(180deg); }
+.context-content { max-height: 0; overflow: hidden; transition: max-height 0.35s ease, opacity 0.3s ease; opacity: 0; }
+.context-content.open { max-height: 600px; opacity: 1; }
+.context-inner { background: var(--parchment-dark); border-left: 3px solid var(--oxford); padding: 14px 18px; margin-top: 10px; }
+.context-inner ul { padding-left: 18px; margin: 0; }
+.context-inner li { font-family: var(--ff-body); font-size: 0.88rem; line-height: 1.6; color: var(--ink-mid); margin-bottom: 6px; }
+
+/* ─── DAILY FIVE GRID ───────────────────────────────────── */
+#daily-five .secondary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 40px; border-top: 1px solid var(--rule); margin-top: 8px; padding-top: 8px; }
+
+/* ─── MARKETS TICKER ────────────────────────────────────── */
+#markets-ticker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); margin-bottom: 24px; }
+.ticker-cell { background: var(--parchment); padding: 14px 18px; text-align: center; }
+.ticker-label { font-family: var(--ff-body); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 4px; }
+.ticker-value { font-family: var(--ff-masthead); font-weight: 700; font-size: 1.5rem; color: var(--ink); line-height: 1; }
+.ticker-change { font-family: var(--ff-body); font-size: 0.75rem; font-weight: 600; margin-top: 3px; }
+.up { color: #1a7a3c; } .down { color: var(--crimson); }
+
+/* ─── GRIDS ─────────────────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 40px; }
+
+/* ─── SECTOR SPOTLIGHT ──────────────────────────────────── */
+.spotlight-card { border-top: 3px solid var(--oxford); padding: 20px 0; }
+.spotlight-headline { font-family: var(--ff-headline); font-size: clamp(1.3rem, 2.5vw, 1.9rem); font-weight: 700; line-height: 1.2; margin-bottom: 14px; }
+.spotlight-body { font-family: var(--ff-body); font-size: 0.95rem; line-height: 1.7; color: var(--ink-mid); margin-bottom: 16px; }
+.spotlight-meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 30px; border-top: 1px solid var(--rule); padding-top: 16px; }
+.spotlight-meta-col h4 { font-family: var(--ff-body); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--oxford); margin-bottom: 8px; }
+.spotlight-meta-col ul { padding-left: 16px; }
+.spotlight-meta-col li { font-family: var(--ff-body); font-size: 0.84rem; line-height: 1.6; color: var(--ink-mid); margin-bottom: 4px; }
+
+/* ─── WORD OF THE DAY ───────────────────────────────────── */
+#word-of-day { background: var(--ink); color: var(--parchment); padding: 30px 36px; }
+.wod-label { font-family: var(--ff-body); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #D4A847; margin-bottom: 10px; }
+.wod-term { font-family: var(--ff-headline); font-size: clamp(1.6rem, 3vw, 2.2rem); font-weight: 700; color: white; margin-bottom: 10px; }
+.wod-def { font-family: var(--ff-garamond); font-style: italic; font-size: 1.05rem; line-height: 1.65; color: #CCC; margin-bottom: 10px; }
+.wod-example { font-family: var(--ff-body); font-size: 0.88rem; color: #AAA; border-left: 2px solid #D4A847; padding-left: 14px; }
+
+/* ─── CONTEXT VAULT ─────────────────────────────────────── */
+#context-vault { background: var(--parchment-dark); border: 1px solid var(--rule); padding: 28px 32px; margin-top: 40px; margin-bottom: 48px; }
+.vault-header { font-family: var(--ff-masthead); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--oxford); margin-bottom: 6px; }
+.vault-subhead { font-family: var(--ff-garamond); font-style: italic; font-size: 0.9rem; color: var(--ink-light); margin-bottom: 20px; }
+.vault-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.vault-pill { border: 1px solid var(--rule); background: var(--parchment); }
+.vault-pill-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+.vault-pill-header:hover { border-bottom-color: var(--rule); }
+.vault-pill-title { font-family: var(--ff-body); font-size: 0.84rem; font-weight: 600; color: var(--ink); }
+.vault-arrow { font-size: 0.75rem; color: var(--ink-light); transition: transform 0.25s; flex-shrink: 0; }
+.vault-pill.open .vault-arrow { transform: rotate(180deg); }
+.vault-pill-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease, opacity 0.3s ease; opacity: 0; }
+.vault-pill.open .vault-pill-body { max-height: 400px; opacity: 1; }
+.vault-pill-body ul { padding: 14px 18px 14px 32px; margin: 0; border-top: 1px solid var(--rule); }
+.vault-pill-body li { font-family: var(--ff-body); font-size: 0.84rem; line-height: 1.6; color: var(--ink-mid); margin-bottom: 6px; }
+
+/* ─── FOOTER ────────────────────────────────────────────── */
+footer { border-top: 3px double var(--ink); padding: 24px var(--gutter); text-align: center; font-family: var(--ff-body); font-size: 0.72rem; color: var(--ink-light); letter-spacing: 0.08em; }
+footer strong { color: var(--ink); font-family: var(--ff-masthead); letter-spacing: 0.15em; }
+
+/* ─── AI GENERATED BANNER ────────────────────────────────── */
+#ai-banner {
+  background: #f0f4ff;
+  border-bottom: 1px solid #c7d6f9;
+  padding: 6px var(--gutter);
+  text-align: center;
+  font-family: var(--ff-body);
+  font-size: 0.7rem;
+  color: #3a5aad;
+  letter-spacing: 0.06em;
+}
+#ai-banner b { font-weight: 700; }
+
+/* ─── RESPONSIVE ────────────────────────────────────────── */
+@media (max-width: 960px) {
+  #daily-five .secondary-grid { grid-template-columns: 1fr; gap: 0; }
+  #markets-ticker { grid-template-columns: repeat(2, 1fr); }
+  .vault-grid { grid-template-columns: 1fr 1fr; }
+  .spotlight-meta-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  :root { --gutter: 14px; }
+  .two-col { grid-template-columns: 1fr; }
+  #markets-ticker { grid-template-columns: repeat(2, 1fr); }
+  .vault-grid { grid-template-columns: 1fr; }
+  .spotlight-meta-grid { grid-template-columns: 1fr; }
+  #daily-five .secondary-grid { grid-template-columns: 1fr; }
+  #word-of-day { padding: 22px 18px; }
+  #context-vault { padding: 20px 16px; }
+  #top-nav ul { gap: 14px; }
+}
+@media print {
+  #sticky-header, #top-nav, #progress-bar, .mark-read-btn, .context-toggle, #loading-screen, #ai-banner { display: none !important; }
+  body { background: white; color: black; font-size: 11pt; }
+  .brief-card { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── LOADING SCREEN ─────────────────────────────────── -->
+<div id="loading-screen">
+  <div class="loading-masthead">The MBA Brief</div>
+  <hr class="loading-rule" />
+  <p class="loading-tagline">Generating Today's Business Intelligence…</p>
+  <div class="loading-dots">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  <p class="loading-status" id="loading-status">Calling Gemini API — this takes ~10 seconds</p>
+</div>
+
+<!-- ─── ERROR SCREEN ──────────────────────────────────── -->
+<div id="error-screen">
+  <p class="error-title">Failed to Load Today's Brief</p>
+  <p class="error-msg" id="error-msg">Could not connect to the backend. Make sure the FastAPI server is running at localhost:8000.</p>
+  <button class="error-retry" onclick="location.reload()">Retry</button>
+</div>
+
+<div id="progress-bar"></div>
+
+<div id="ai-banner">
+  ✦ Today's brief is <b>AI-generated by Gemini</b> — curated for India's MBA students · Not investment advice
+</div>
+
+<header id="sticky-header" aria-hidden="true">
+  <span id="sticky-logo">The MBA Brief</span>
+  <span id="sticky-date"></span>
+</header>
+
+<nav id="top-nav" aria-label="Main Navigation">
+  <ul>
+    <li><a href="#daily-five">Today</a></li>
+    <li><a href="#markets">Markets</a></li>
+    <li><a href="#policy">Policy</a></li>
+    <li><a href="#sector">Sector</a></li>
+    <li><a href="#global">Global</a></li>
+    <li><a href="#context-vault">Context Vault</a></li>
+  </ul>
+</nav>
+
+<div id="masthead" role="banner">
+  <h1 id="masthead-title">The MBA Brief</h1>
+  <hr id="masthead-rule" />
+  <p id="masthead-tagline">The Day's Business Intelligence, Distilled for the Thinking Student</p>
+  <div id="masthead-meta">
+    <span><b id="today-date">—</b></span>
+    <span id="edition-no">Edition No. —</span>
+    <span>Mumbai · Delhi · Bengaluru</span>
+  </div>
+</div>
+
+<div id="read-time-bar">
+  <span class="read-time-badge" id="read-time-badge">Time to Read Today's Brief: —</span>
+  <span id="progress-text">Today's Brief: <span id="stories-count">0 of 5</span> stories read</span>
+</div>
+
+<main id="wrapper">
+
+  <!-- ① THE DAILY FIVE -->
+  <section id="daily-five">
+    <div class="section-header">
+      <span class="section-stamp crimson">The Daily Five</span>
+      <hr />
+      <span class="section-stamp" style="background:transparent;color:var(--ink-light);border:1px solid var(--rule);font-size:0.65rem;" id="daily-five-date">Top Stories</span>
+    </div>
+    <div id="lead-row"></div>
+    <hr style="margin:8px 0;" />
+    <div id="secondary-grid" class="secondary-grid"></div>
+  </section>
+
+  <hr class="thick-rule" style="margin-top:40px;" />
+
+  <!-- ② MARKETS & MACRO -->
+  <section id="markets">
+    <div class="section-header">
+      <span class="section-stamp oxford">Markets &amp; Macro</span>
+      <hr />
+    </div>
+    <div id="markets-ticker"></div>
+    <div id="markets-article"></div>
+  </section>
+
+  <hr class="thick-rule" />
+
+  <!-- ③ POLICY WATCH -->
+  <section id="policy">
+    <div class="section-header">
+      <span class="section-stamp">Policy Watch</span>
+      <hr />
+    </div>
+    <div id="policy-grid" class="two-col"></div>
+  </section>
+
+  <hr class="thick-rule" />
+
+  <!-- ④ SECTOR SPOTLIGHT -->
+  <section id="sector">
+    <div class="section-header">
+      <span class="section-stamp oxford">Sector Spotlight</span>
+      <hr />
+      <span style="font-family:var(--ff-garamond);font-style:italic;font-size:0.85rem;color:var(--ink-light);white-space:nowrap;" id="sector-name">—</span>
+    </div>
+    <div class="spotlight-card">
+      <h2 class="spotlight-headline" id="spotlight-headline"></h2>
+      <p class="spotlight-body" id="spotlight-body"></p>
+      <div class="spotlight-meta-grid">
+        <div class="spotlight-meta-col"><h4>The Players</h4><ul id="players-list"></ul></div>
+        <div class="spotlight-meta-col"><h4>Implications for MBAs</h4><ul id="implications-list"></ul></div>
+        <div class="spotlight-meta-col"><h4>Key Metrics to Track</h4><ul id="metrics-list"></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="thick-rule" />
+
+  <!-- ⑤ GLOBAL PULSE -->
+  <section id="global">
+    <div class="section-header">
+      <span class="section-stamp crimson">Global Pulse</span>
+      <hr />
+    </div>
+    <div id="global-grid" class="two-col"></div>
+  </section>
+
+  <hr class="thick-rule" />
+
+  <!-- ⑥ WORD OF THE DAY -->
+  <section id="word-of-day">
+    <p class="wod-label">▸ Word of the Day</p>
+    <h2 class="wod-term" id="wod-term"></h2>
+    <p class="wod-def" id="wod-def"></p>
+    <p class="wod-example" id="wod-example"></p>
+  </section>
+
+  <div style="height:40px;"></div>
+
+  <!-- ⑦ CONTEXT VAULT -->
+  <section id="context-vault">
+    <p class="vault-header">▸ The Context Vault</p>
+    <p class="vault-subhead">Ongoing storylines explained — for the student who missed the prior chapters.</p>
+    <div id="vault-grid" class="vault-grid"></div>
+  </section>
+
+</main>
+
+<footer>
+  <strong>THE MBA BRIEF</strong> &nbsp;·&nbsp; <span id="footer-edition">Edition No. —</span> &nbsp;·&nbsp; <span id="footer-date">—</span><br />
+  <span>Curated for MBA students at India's Tier-1 &amp; Tier-2 B-Schools &nbsp;·&nbsp; AI-generated by Gemini &nbsp;·&nbsp; Not investment advice.</span>
+</footer>
+
+<script>
+/* ─── STATE ──────────────────────────────────────────────── */
+let STORIES_COUNT = 5;
+let readStories = new Set(JSON.parse(localStorage.getItem('mba_read') || '[]'));
+function saveRead() { localStorage.setItem('mba_read', JSON.stringify([...readStories])); }
+function updateProgress() {
+  const allIds = [...document.querySelectorAll('.brief-card[data-story-id]')].map(c => c.dataset.storyId);
+  const done = allIds.filter(id => readStories.has(id)).length;
+  const total = allIds.length;
+  document.getElementById('progress-bar').style.width = (total ? done / total * 100 : 0) + '%';
+  document.getElementById('stories-count').textContent = done + ' of ' + total;
+}
+
+/* ─── HELPERS ────────────────────────────────────────────── */
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+function setupContextToggle(btn, content) {
+  btn.addEventListener('click', () => {
+    const open = content.classList.toggle('open');
+    btn.classList.toggle('open', open);
+  });
+}
+function setupVaultPill(pill) {
+  pill.querySelector('.vault-pill-header').addEventListener('click', () => pill.classList.toggle('open'));
+}
+function setupMarkRead(btn, id, card) {
+  if (readStories.has(id)) { btn.textContent = '✓ Marked Read'; btn.classList.add('marked'); card.classList.add('read'); }
+  btn.addEventListener('click', () => {
+    if (readStories.has(id)) {
+      readStories.delete(id); btn.textContent = 'Mark as Read'; btn.classList.remove('marked'); card.classList.remove('read');
+    } else {
+      readStories.add(id); btn.textContent = '✓ Marked Read'; btn.classList.add('marked'); card.classList.add('read');
+    }
+    saveRead(); updateProgress();
+  });
+}
+
+function buildCard(story, isLead) {
+  const card = document.createElement('article');
+  card.className = 'brief-card' + (isLead ? ' lead' : '');
+  card.id = story.id;
+  card.dataset.storyId = story.id;
+  const cid = story.id + '-ctx';
+  const tag = isLead ? 'h2' : 'h3';
+  card.innerHTML = `
+    <span class="source-badge">${esc(story.source)}</span>
+    <${tag} class="card-headline">${esc(story.headline)}</${tag}>
+    <div class="card-meta">
+      <span class="read-time">⏱ ${esc(story.readTime)}</span>
+      <button class="mark-read-btn">Mark as Read</button>
+    </div>
+    <p class="card-label">The Gist</p>
+    <p class="card-gist">${esc(story.gist)}</p>
+    <p class="card-label">The So What?</p>
+    <blockquote class="card-sowhat">${esc(story.sowhat)}</blockquote>
+    ${story.context && story.context.length ? `
+    <button class="context-toggle">Need Background? <span class="arrow">▼</span></button>
+    <div class="context-content" id="${cid}">
+      <div class="context-inner"><ul>${story.context.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div>
+    </div>` : ''}`;
+  setupMarkRead(card.querySelector('.mark-read-btn'), story.id, card);
+  if (story.context && story.context.length) {
+    setupContextToggle(card.querySelector('.context-toggle'), card.querySelector('.context-content'));
+  }
+  return card;
+}
+
+function buildMiniCard(s) {
+  const card = document.createElement('article');
+  card.className = 'brief-card';
+  card.dataset.storyId = s.id;
+  const cid = s.id + '-ctx';
+  card.innerHTML = `
+    <span class="source-badge">${esc(s.source)}</span>
+    <h3 class="card-headline">${esc(s.headline)}</h3>
+    <div class="card-meta"><span class="read-time">⏱ ${esc(s.readTime)}</span></div>
+    <p class="card-label">The Gist</p>
+    <p class="card-gist">${esc(s.gist)}</p>
+    <p class="card-label">The So What?</p>
+    <blockquote class="card-sowhat">${esc(s.sowhat)}</blockquote>
+    ${s.context && s.context.length ? `
+    <button class="context-toggle">Need Background? <span class="arrow">▼</span></button>
+    <div class="context-content" id="${cid}"><div class="context-inner"><ul>${s.context.map(c => `<li>${esc(c)}</li>`).join('')}</ul></div></div>` : ''}`;
+  if (s.context && s.context.length) {
+    setupContextToggle(card.querySelector('.context-toggle'), card.querySelector('.context-content'));
+  }
+  return card;
+}
+
+/* ─── DATE FORMAT ────────────────────────────────────────── */
+function formatDate(isoStr) {
+  const [y, m, d] = isoStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+/* ─── RENDER BRIEF ───────────────────────────────────────── */
+function renderBrief(data) {
+  const { edition, markets, stories, policy, global: globalStories, sector, wordOfDay, vault } = data;
+
+  // Masthead
+  const dateStr = formatDate(edition.date);
+  document.getElementById('today-date').textContent = dateStr;
+  document.getElementById('edition-no').textContent = 'Edition No. ' + edition.number;
+  document.getElementById('sticky-date').textContent = dateStr;
+  document.getElementById('read-time-badge').textContent = `Time to Read Today's Brief: ~${edition.readTime} mins`;
+  document.getElementById('daily-five-date').textContent = `Top Stories · ${new Date(edition.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  document.getElementById('footer-edition').textContent = 'Edition No. ' + edition.number;
+  document.getElementById('footer-date').textContent = dateStr;
+
+  // Markets ticker
+  const ticker = document.getElementById('markets-ticker');
+  markets.forEach(m => {
+    const c = document.createElement('div'); c.className = 'ticker-cell';
+    c.innerHTML = `<div class="ticker-label">${esc(m.label)}</div><div class="ticker-value">${esc(m.value)}</div><div class="ticker-change ${m.dir}">${m.dir === 'up' ? '▲' : '▼'} ${esc(m.change)}</div>`;
+    ticker.appendChild(c);
+  });
+
+  // Daily Five
+  document.getElementById('lead-row').appendChild(buildCard(stories[0], true));
+  const sg = document.getElementById('secondary-grid');
+  stories.slice(1).forEach(s => sg.appendChild(buildCard(s, false)));
+
+  // Policy
+  const pg = document.getElementById('policy-grid');
+  policy.forEach(s => pg.appendChild(buildMiniCard(s)));
+
+  // Global
+  const gg = document.getElementById('global-grid');
+  globalStories.forEach(s => gg.appendChild(buildMiniCard(s)));
+
+  // Sector Spotlight
+  document.getElementById('sector-name').textContent = sector.name;
+  document.getElementById('spotlight-headline').textContent = sector.headline;
+  document.getElementById('spotlight-body').textContent = sector.body;
+  document.getElementById('players-list').innerHTML = sector.players.map(p => `<li>${esc(p)}</li>`).join('');
+  document.getElementById('implications-list').innerHTML = sector.implications.map(i => `<li>${esc(i)}</li>`).join('');
+  document.getElementById('metrics-list').innerHTML = (sector.metrics || []).map(m => `<li>${esc(m)}</li>`).join('');
+
+  // Word of the Day
+  document.getElementById('wod-term').textContent = wordOfDay.term;
+  document.getElementById('wod-def').textContent = wordOfDay.definition;
+  document.getElementById('wod-example').textContent = wordOfDay.example;
+
+  // Vault
+  const vg = document.getElementById('vault-grid');
+  vault.forEach(vp => {
+    const pill = document.createElement('div'); pill.className = 'vault-pill';
+    pill.innerHTML = `<div class="vault-pill-header"><span class="vault-pill-title">${esc(vp.title)}</span><span class="vault-arrow">▼</span></div>
+    <div class="vault-pill-body"><ul>${vp.points.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div>`;
+    setupVaultPill(pill); vg.appendChild(pill);
+  });
+
+  // Sticky header scroll
+  const hdr = document.getElementById('sticky-header');
+  window.addEventListener('scroll', () => hdr.classList.toggle('visible', window.scrollY > 160));
+
+  updateProgress();
+}
+
+/* ─── BOOT ───────────────────────────────────────────────── */
+async function boot() {
+  const loadingScreen = document.getElementById('loading-screen');
+  const loadingStatus = document.getElementById('loading-status');
+  const errorScreen = document.getElementById('error-screen');
+  const errorMsg = document.getElementById('error-msg');
+
+  // Animated status messages while waiting
+  const msgs = [
+    'Calling Gemini API — this takes ~10 seconds',
+    'Scanning India\'s business landscape…',
+    'Distilling markets & macro data…',
+    'Crafting today\'s policy watch…',
+    'Finalising sector spotlight…',
+    'Almost ready…'
+  ];
+  let mi = 0;
+  const msgInterval = setInterval(() => {
+    mi = (mi + 1) % msgs.length;
+    loadingStatus.textContent = msgs[mi];
+  }, 2500);
+
+  try {
+    const res = await fetch('/api/brief');
+    clearInterval(msgInterval);
+    if (!res.ok) {
+      throw new Error(`API returned ${res.status}: ${res.statusText}`);
+    }
+    const data = await res.json();
+
+    // Fade out loader
+    loadingStatus.textContent = 'Rendering your brief…';
+    loadingScreen.classList.add('fade-out');
+    setTimeout(() => {
+      loadingScreen.style.display = 'none';
+      renderBrief(data);
+    }, 600);
+
+  } catch (err) {
+    clearInterval(msgInterval);
+    loadingScreen.style.display = 'none';
+    errorMsg.textContent = err.message || 'Unknown error. Make sure the FastAPI server is running on localhost:8000.';
+    errorScreen.classList.add('visible');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>

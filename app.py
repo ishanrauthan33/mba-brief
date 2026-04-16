@@ -2,14 +2,19 @@ import os
 import json
 import re
 import datetime
+import logging
 from pathlib import Path
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.concurrency import run_in_threadpool
 from google import genai
 from google.genai import types
+
+logger = logging.getLogger(__name__)
 
 try:
     import yfinance as yf
@@ -22,7 +27,19 @@ from news_fetcher import fetch_all_news, format_articles_for_prompt
 load_dotenv()
 
 app = FastAPI(title="The MBA Brief API")
+
+# CORS — allow all origins for embedding/API access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+
+# Admin secret for debug endpoints (optional, set in Railway env vars)
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "")
 
 CACHE_DIR = Path(__file__).parent / "cache"
 CACHE_DIR.mkdir(exist_ok=True)
@@ -207,13 +224,18 @@ def fetch_live_markets() -> list[dict]:
         today_val, prev_val = vals
         change = today_val - prev_val
         pct    = (change / prev_val) * 100
-        sign   = "+" if change >= 0 else ""
-        direction = "up" if change >= 0 else "down"
+        # Handle near-zero changes gracefully
+        if abs(pct) < 0.005:
+            direction = "flat"
+            change_str = "0.00 (0.00%)"
+        else:
+            sign   = "+" if change >= 0 else ""
+            direction = "up" if change >= 0 else "down"
+            change_str = f"{sign}{change:.2f} ({sign}{pct:.2f}%)"
         if today_val >= 10_000:
             value_str = f"{prefix}{today_val:,.2f}{suffix}"
         else:
             value_str = f"{prefix}{today_val:.2f}{suffix}"
-        change_str = f"{sign}{change:.2f} ({sign}{pct:.2f}%)"
         return {"label": label, "value": value_str, "change": change_str, "dir": direction}
 
     entries = [
@@ -290,6 +312,11 @@ def generate_brief(today: str) -> dict:
 
 def get_brief(today: str) -> dict:
     """Return cached brief (memory → disk → generate)."""
+    # Evict stale cache entries (keep only today)
+    stale_keys = [k for k in _memory_cache if k != today]
+    for k in stale_keys:
+        del _memory_cache[k]
+
     if today in _memory_cache:
         return inject_live_markets(_memory_cache[today])
     cache_path = get_cache_path(today)
@@ -322,9 +349,13 @@ async def serve_frontend():
 async def api_brief():
     today = get_today_ist()
     try:
-        data = get_brief(today)
-        return JSONResponse(content=data)
+        data = await run_in_threadpool(get_brief, today)
+        return JSONResponse(
+            content=data,
+            media_type="application/json; charset=utf-8",
+        )
     except Exception as e:
+        logger.error(f"Failed to generate brief: {e}")
         return JSONResponse(
             status_code=503,
             content={"error": str(e), "message": "We're having trouble loading today's brief. Please try again in a few minutes."},
@@ -341,8 +372,10 @@ async def serve_og_image():
 
 
 @app.delete("/api/cache")
-async def clear_cache():
-    """Dev endpoint: wipe today's cache to force regeneration."""
+async def clear_cache(secret: str = Query("")):
+    """Dev endpoint: wipe today's cache to force regeneration. Requires ADMIN_SECRET."""
+    if ADMIN_SECRET and secret != ADMIN_SECRET:
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
     today = get_today_ist()
     _memory_cache.pop(today, None)
     cache_path = get_cache_path(today)
@@ -353,7 +386,25 @@ async def clear_cache():
 
 
 @app.get("/api/news-sources")
-async def news_sources():
-    """Debug endpoint: show which RSS feeds are configured."""
+async def news_sources(secret: str = Query("")):
+    """Debug endpoint: show which RSS feeds are configured. Requires ADMIN_SECRET."""
+    if ADMIN_SECRET and secret != ADMIN_SECRET:
+        return JSONResponse(status_code=403, content={"error": "Forbidden"})
     from news_fetcher import RSS_FEEDS
     return {"feeds": [{"source": f["source"], "category": f["category"]} for f in RSS_FEEDS]}
+
+
+# ---------------------------------------------------------------------------
+# Startup: pre-warm today's cache so first user doesn't wait
+# ---------------------------------------------------------------------------
+
+@app.on_event("startup")
+async def warmup_cache():
+    """Pre-generate today's brief on server boot so users get instant loads."""
+    logger.info("[MBA Brief] Startup: warming cache for today...")
+    try:
+        today = get_today_ist()
+        await run_in_threadpool(get_brief, today)
+        logger.info(f"[MBA Brief] Cache warm for {today}")
+    except Exception as e:
+        logger.warning(f"[MBA Brief] Startup cache warmup failed: {e}")

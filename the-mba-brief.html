@@ -5,6 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>The MBA Brief — Daily Business Intelligence for India's MBA Students</title>
 <meta name="description" content="The MBA Brief: curated, contextualised daily business and economy news for MBA students at India's top B-Schools. Read in under 10 minutes." />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="The MBA Brief — Daily Business Intelligence for India's MBA Students" />
+<meta property="og:description" content="AI-generated daily news digest curated for India's MBA students. Markets, policy, sector spotlights and more." />
+<meta property="og:image" content="/og-image.png" />
+<meta property="og:url" content="https://the-mba-brief.up.railway.app" />
+<meta property="og:site_name" content="The MBA Brief" />
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="The MBA Brief — Daily Business Intelligence for India's MBA Students" />
+<meta name="twitter:description" content="AI-generated daily news digest curated for India's MBA students. Markets, policy, sector spotlights and more." />
+<meta name="twitter:image" content="/og-image.png" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Sans+3:wght@300;400;600;700&family=EB+Garamond:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:wght@700;900&display=swap" rel="stylesheet" />
@@ -53,6 +68,74 @@ body::before {
 a { color: inherit; text-decoration: none; }
 hr { border: none; border-top: 1px solid var(--rule); margin: 0; }
 .thick-rule { border-top: 3px solid var(--ink); }
+
+/* ─── SKELETON LOADING ──────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-bone {
+  background: linear-gradient(90deg, var(--parchment-dark) 25%, #e8e1d4 37%, var(--parchment-dark) 63%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 3px;
+}
+.skeleton-card {
+  border-top: 3px solid var(--rule);
+  padding: 20px 0 24px;
+}
+.skeleton-card .skel-badge {
+  width: 60px; height: 16px; margin-bottom: 10px;
+}
+.skeleton-card .skel-headline {
+  width: 85%; height: 22px; margin-bottom: 8px;
+}
+.skeleton-card .skel-headline-2 {
+  width: 60%; height: 22px; margin-bottom: 12px;
+}
+.skeleton-card .skel-meta {
+  width: 120px; height: 14px; margin-bottom: 14px;
+}
+.skeleton-card .skel-label {
+  width: 70px; height: 12px; margin-bottom: 6px; margin-top: 10px;
+}
+.skeleton-card .skel-body {
+  width: 100%; height: 14px; margin-bottom: 6px;
+}
+.skeleton-card .skel-body-short {
+  width: 75%; height: 14px; margin-bottom: 6px;
+}
+.skeleton-card.lead .skel-headline {
+  width: 90%; height: 32px; margin-bottom: 10px;
+}
+.skeleton-card.lead .skel-headline-2 {
+  width: 65%; height: 32px; margin-bottom: 14px;
+}
+.skeleton-ticker .skel-ticker-cell {
+  background: var(--parchment);
+  padding: 14px 18px;
+  text-align: center;
+}
+.skeleton-ticker .skel-ticker-label {
+  width: 60%; height: 12px; margin: 0 auto 6px;
+}
+.skeleton-ticker .skel-ticker-value {
+  width: 80%; height: 24px; margin: 0 auto 4px;
+}
+.skeleton-ticker .skel-ticker-change {
+  width: 70%; height: 14px; margin: 0 auto;
+}
+
+/* ─── LOADING PULSE FOR HEADER ──────────────────────────── */
+@keyframes headerPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+.loading-pulse {
+  animation: headerPulse 1.5s ease-in-out infinite;
+  color: var(--ink-light);
+  font-style: italic;
+}
 
 /* ─── LOADING SCREEN ────────────────────────────────────── */
 #loading-screen {
@@ -151,6 +234,11 @@ hr { border: none; border-top: 1px solid var(--rule); margin: 0; }
   transition: background 0.2s;
 }
 .error-retry:hover { background: var(--crimson); }
+.error-retry:disabled {
+  background: var(--ink-light);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 
 /* ─── PROGRESS BAR ──────────────────────────────────────── */
 #progress-bar {
@@ -351,20 +439,20 @@ footer strong { color: var(--ink); font-family: var(--ff-masthead); letter-spaci
 <div id="loading-screen">
   <div class="loading-masthead">The MBA Brief</div>
   <hr class="loading-rule" />
-  <p class="loading-tagline">Generating Today's Business Intelligence…</p>
+  <p class="loading-tagline">Preparing Today's Business Intelligence…</p>
   <div class="loading-dots">
     <div class="loading-dot"></div>
     <div class="loading-dot"></div>
     <div class="loading-dot"></div>
   </div>
-  <p class="loading-status" id="loading-status">Calling Gemini API — this takes ~10 seconds</p>
+  <p class="loading-status" id="loading-status">Curating today's top stories…</p>
 </div>
 
 <!-- ─── ERROR SCREEN ──────────────────────────────────── -->
 <div id="error-screen">
-  <p class="error-title">Failed to Load Today's Brief</p>
-  <p class="error-msg" id="error-msg">Could not connect to the backend. Make sure the FastAPI server is running at localhost:8000.</p>
-  <button class="error-retry" onclick="location.reload()">Retry</button>
+  <p class="error-title">Unable to Load Today's Brief</p>
+  <p class="error-msg" id="error-msg">We're having trouble loading today's brief. Please try again in a few minutes.</p>
+  <button class="error-retry" id="retry-btn">Retry</button>
 </div>
 
 <div id="progress-bar"></div>
@@ -394,14 +482,14 @@ footer strong { color: var(--ink); font-family: var(--ff-masthead); letter-spaci
   <hr id="masthead-rule" />
   <p id="masthead-tagline">The Day's Business Intelligence, Distilled for the Thinking Student</p>
   <div id="masthead-meta">
-    <span><b id="today-date">—</b></span>
-    <span id="edition-no">Edition No. —</span>
+    <span><b id="today-date" class="loading-pulse">Loading…</b></span>
+    <span id="edition-no" class="loading-pulse">Loading…</span>
     <span>Mumbai · Delhi · Bengaluru</span>
   </div>
 </div>
 
 <div id="read-time-bar">
-  <span class="read-time-badge" id="read-time-badge">Time to Read Today's Brief: —</span>
+  <span class="read-time-badge" id="read-time-badge"><span class="loading-pulse">Loading…</span></span>
   <span id="progress-text">Today's Brief: <span id="stories-count">0 of 5</span> stories read</span>
 </div>
 
@@ -500,6 +588,11 @@ footer strong { color: var(--ink); font-family: var(--ff-masthead); letter-spaci
 </footer>
 
 <script>
+/* ─── CONFIG ─────────────────────────────────────────────── */
+// API_URL is relative since the HTML is served by the same FastAPI backend.
+// If deploying frontend and backend separately, override with the backend URL.
+const API_URL = '/api/brief';
+
 /* ─── STATE ──────────────────────────────────────────────── */
 let STORIES_COUNT = 5;
 let readStories = new Set(JSON.parse(localStorage.getItem('mba_read') || '[]'));
@@ -598,39 +691,119 @@ function formatDate(isoStr) {
   return dt.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+/* ─── SKELETON LOADER ────────────────────────────────────── */
+function renderSkeletons() {
+  // Build skeleton for lead story
+  const leadRow = document.getElementById('lead-row');
+  leadRow.innerHTML = buildSkeletonCard(true);
+
+  // Build skeleton for 4 secondary stories
+  const secGrid = document.getElementById('secondary-grid');
+  secGrid.innerHTML = buildSkeletonCard(false) + buildSkeletonCard(false) + buildSkeletonCard(false) + buildSkeletonCard(false);
+
+  // Build skeleton for markets ticker
+  const ticker = document.getElementById('markets-ticker');
+  ticker.innerHTML = '';
+  ticker.classList.add('skeleton-ticker');
+  for (let i = 0; i < 4; i++) {
+    ticker.innerHTML += `<div class="skel-ticker-cell" style="background:var(--parchment);padding:14px 18px;text-align:center;">
+      <div class="skeleton-bone" style="width:60%;height:12px;margin:0 auto 6px;"></div>
+      <div class="skeleton-bone" style="width:80%;height:24px;margin:0 auto 4px;"></div>
+      <div class="skeleton-bone" style="width:70%;height:14px;margin:0 auto;"></div>
+    </div>`;
+  }
+
+  // Build skeleton for policy (2 cards)
+  const policyGrid = document.getElementById('policy-grid');
+  policyGrid.innerHTML = buildSkeletonCard(false) + buildSkeletonCard(false);
+
+  // Build skeleton for global (2 cards)
+  const globalGrid = document.getElementById('global-grid');
+  globalGrid.innerHTML = buildSkeletonCard(false) + buildSkeletonCard(false);
+
+  // Build skeleton for sector
+  document.getElementById('spotlight-headline').innerHTML = '<div class="skeleton-bone" style="width:80%;height:24px;"></div>';
+  document.getElementById('spotlight-body').innerHTML = '<div class="skeleton-bone" style="width:100%;height:14px;margin-bottom:6px;"></div><div class="skeleton-bone" style="width:90%;height:14px;margin-bottom:6px;"></div><div class="skeleton-bone" style="width:70%;height:14px;"></div>';
+
+  // Word of the day skeleton
+  document.getElementById('wod-term').innerHTML = '<div class="skeleton-bone" style="width:200px;height:28px;background:linear-gradient(90deg,#222 25%,#333 37%,#222 63%);background-size:800px 100%;animation:shimmer 1.6s ease-in-out infinite;"></div>';
+  document.getElementById('wod-def').innerHTML = '<div class="skeleton-bone" style="width:100%;height:14px;margin-bottom:6px;background:linear-gradient(90deg,#222 25%,#333 37%,#222 63%);background-size:800px 100%;animation:shimmer 1.6s ease-in-out infinite;"></div>';
+
+  // Vault skeleton (3 pills)
+  const vaultGrid = document.getElementById('vault-grid');
+  vaultGrid.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    vaultGrid.innerHTML += `<div class="vault-pill"><div class="vault-pill-header"><div class="skeleton-bone" style="width:70%;height:16px;"></div><span class="vault-arrow">▼</span></div></div>`;
+  }
+}
+
+function buildSkeletonCard(isLead) {
+  return `<div class="skeleton-card${isLead ? ' lead' : ''}">
+    <div class="skeleton-bone skel-badge"></div>
+    <div class="skeleton-bone skel-headline"></div>
+    <div class="skeleton-bone skel-headline-2"></div>
+    <div class="skeleton-bone skel-meta"></div>
+    <div class="skeleton-bone skel-label"></div>
+    <div class="skeleton-bone skel-body"></div>
+    <div class="skeleton-bone skel-body"></div>
+    <div class="skeleton-bone skel-body-short"></div>
+    <div class="skeleton-bone skel-label"></div>
+    <div class="skeleton-bone skel-body"></div>
+    <div class="skeleton-bone skel-body-short"></div>
+  </div>`;
+}
+
 /* ─── RENDER BRIEF ───────────────────────────────────────── */
 function renderBrief(data) {
   const { edition, markets, stories, policy, global: globalStories, sector, wordOfDay, vault } = data;
 
-  // Masthead
+  // Masthead — remove loading pulse class
   const dateStr = formatDate(edition.date);
-  document.getElementById('today-date').textContent = dateStr;
-  document.getElementById('edition-no').textContent = 'Edition No. ' + edition.number;
+  const todayDateEl = document.getElementById('today-date');
+  const editionNoEl = document.getElementById('edition-no');
+  const readTimeBadgeEl = document.getElementById('read-time-badge');
+  
+  todayDateEl.textContent = dateStr;
+  todayDateEl.classList.remove('loading-pulse');
+  
+  editionNoEl.textContent = 'Edition No. ' + edition.number;
+  editionNoEl.classList.remove('loading-pulse');
+  
   document.getElementById('sticky-date').textContent = dateStr;
-  document.getElementById('read-time-badge').textContent = `Time to Read Today's Brief: ~${edition.readTime} mins`;
+  
+  readTimeBadgeEl.innerHTML = '';
+  readTimeBadgeEl.textContent = `Time to Read Today's Brief: ~${edition.readTime} mins`;
+  
   document.getElementById('daily-five-date').textContent = `Top Stories · ${new Date(edition.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`;
   document.getElementById('footer-edition').textContent = 'Edition No. ' + edition.number;
   document.getElementById('footer-date').textContent = dateStr;
 
-  // Markets ticker
+  // Markets ticker – clear skeleton
   const ticker = document.getElementById('markets-ticker');
+  ticker.innerHTML = '';
+  ticker.classList.remove('skeleton-ticker');
   markets.forEach(m => {
     const c = document.createElement('div'); c.className = 'ticker-cell';
     c.innerHTML = `<div class="ticker-label">${esc(m.label)}</div><div class="ticker-value">${esc(m.value)}</div><div class="ticker-change ${m.dir}">${m.dir === 'up' ? '▲' : '▼'} ${esc(m.change)}</div>`;
     ticker.appendChild(c);
   });
 
-  // Daily Five
-  document.getElementById('lead-row').appendChild(buildCard(stories[0], true));
+  // Daily Five – clear skeleton
+  const leadRow = document.getElementById('lead-row');
+  leadRow.innerHTML = '';
+  leadRow.appendChild(buildCard(stories[0], true));
   const sg = document.getElementById('secondary-grid');
+  sg.innerHTML = '';
   stories.slice(1).forEach(s => sg.appendChild(buildCard(s, false)));
 
-  // Policy
+  // Policy – clear skeleton
   const pg = document.getElementById('policy-grid');
+  pg.innerHTML = '';
   policy.forEach(s => pg.appendChild(buildMiniCard(s)));
 
-  // Global
+  // Global – clear skeleton
   const gg = document.getElementById('global-grid');
+  gg.innerHTML = '';
   globalStories.forEach(s => gg.appendChild(buildMiniCard(s)));
 
   // Sector Spotlight
@@ -646,8 +819,9 @@ function renderBrief(data) {
   document.getElementById('wod-def').textContent = wordOfDay.definition;
   document.getElementById('wod-example').textContent = wordOfDay.example;
 
-  // Vault
+  // Vault – clear skeleton
   const vg = document.getElementById('vault-grid');
+  vg.innerHTML = '';
   vault.forEach(vp => {
     const pill = document.createElement('div'); pill.className = 'vault-pill';
     pill.innerHTML = `<div class="vault-pill-header"><span class="vault-pill-title">${esc(vp.title)}</span><span class="vault-arrow">▼</span></div>
@@ -662,6 +836,30 @@ function renderBrief(data) {
   updateProgress();
 }
 
+/* ─── RETRY BUTTON WITH COOLDOWN ─────────────────────────── */
+function setupRetryButton() {
+  const retryBtn = document.getElementById('retry-btn');
+  retryBtn.addEventListener('click', () => {
+    // Disable for 5 seconds to prevent spam
+    retryBtn.disabled = true;
+    retryBtn.textContent = 'Retrying…';
+    
+    // Hide error screen and show loading
+    document.getElementById('error-screen').classList.remove('visible');
+    document.getElementById('loading-screen').style.display = 'flex';
+    document.getElementById('loading-screen').classList.remove('fade-out');
+    
+    // Re-attempt boot
+    boot();
+    
+    // Re-enable after 5 seconds
+    setTimeout(() => {
+      retryBtn.disabled = false;
+      retryBtn.textContent = 'Retry';
+    }, 5000);
+  });
+}
+
 /* ─── BOOT ───────────────────────────────────────────────── */
 async function boot() {
   const loadingScreen = document.getElementById('loading-screen');
@@ -669,9 +867,12 @@ async function boot() {
   const errorScreen = document.getElementById('error-screen');
   const errorMsg = document.getElementById('error-msg');
 
+  // Render skeleton placeholders behind the loading screen
+  renderSkeletons();
+
   // Animated status messages while waiting
   const msgs = [
-    'Calling Gemini API — this takes ~10 seconds',
+    'Curating today\'s top stories…',
     'Scanning India\'s business landscape…',
     'Distilling markets & macro data…',
     'Crafting today\'s policy watch…',
@@ -685,12 +886,17 @@ async function boot() {
   }, 2500);
 
   try {
-    const res = await fetch('/api/brief');
+    const res = await fetch(API_URL);
     clearInterval(msgInterval);
     if (!res.ok) {
-      throw new Error(`API returned ${res.status}: ${res.statusText}`);
+      throw new Error('server_error');
     }
     const data = await res.json();
+
+    // Check if we got an error response from the API
+    if (data.error) {
+      throw new Error('api_error');
+    }
 
     // Fade out loader
     loadingStatus.textContent = 'Rendering your brief…';
@@ -703,12 +909,15 @@ async function boot() {
   } catch (err) {
     clearInterval(msgInterval);
     loadingScreen.style.display = 'none';
-    errorMsg.textContent = err.message || 'Unknown error. Make sure the FastAPI server is running on localhost:8000.';
+    errorMsg.textContent = "We're having trouble loading today's brief. Please try again in a few minutes.";
     errorScreen.classList.add('visible');
   }
 }
 
-document.addEventListener('DOMContentLoaded', boot);
+document.addEventListener('DOMContentLoaded', () => {
+  setupRetryButton();
+  boot();
+});
 </script>
 </body>
 </html>

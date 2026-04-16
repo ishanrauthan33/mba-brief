@@ -3,6 +3,7 @@ import json
 import re
 import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -27,6 +28,15 @@ CACHE_DIR = Path(__file__).parent / "cache"
 CACHE_DIR.mkdir(exist_ok=True)
 
 HTML_FILE = Path(__file__).parent / "the-mba-brief.html"
+OG_IMAGE_FILE = Path(__file__).parent / "og-image.png"
+
+# IST timezone for daily cache keying
+IST = ZoneInfo("Asia/Kolkata")
+
+
+def get_today_ist() -> str:
+    """Return today's date string in IST (Asia/Kolkata)."""
+    return datetime.datetime.now(IST).date().isoformat()
 
 # ---------------------------------------------------------------------------
 # Prompts
@@ -310,21 +320,30 @@ async def serve_frontend():
 
 @app.get("/api/brief")
 async def api_brief():
-    today = datetime.date.today().isoformat()
+    today = get_today_ist()
     try:
         data = get_brief(today)
         return JSONResponse(content=data)
     except Exception as e:
         return JSONResponse(
             status_code=503,
-            content={"error": str(e), "message": "Failed to generate brief. Check API key quota."},
+            content={"error": str(e), "message": "We're having trouble loading today's brief. Please try again in a few minutes."},
         )
+
+
+@app.get("/og-image.png")
+async def serve_og_image():
+    """Serve the Open Graph image for social sharing previews."""
+    if OG_IMAGE_FILE.exists():
+        from fastapi.responses import FileResponse
+        return FileResponse(OG_IMAGE_FILE, media_type="image/png")
+    return JSONResponse(status_code=404, content={"error": "OG image not found"})
 
 
 @app.delete("/api/cache")
 async def clear_cache():
     """Dev endpoint: wipe today's cache to force regeneration."""
-    today = datetime.date.today().isoformat()
+    today = get_today_ist()
     _memory_cache.pop(today, None)
     cache_path = get_cache_path(today)
     if cache_path.exists():
